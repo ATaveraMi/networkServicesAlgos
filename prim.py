@@ -1,57 +1,52 @@
+def prim(matriz_adyacencia):
+    """Encuentra el árbol de expansión mínima (MST) usando el algoritmo de Prim."""
+    num_nodos = len(matriz_adyacencia)
+    INFINITO = float('inf')
+    peso_total = 0
+    visitado = [False] * num_nodos  # Nodos ya seleccionados para el MST
+    aristas_minimas = [{'peso': INFINITO, 'origen': -1} for _ in range(num_nodos)]
+    aristas_minimas[0]['peso'] = 0  # Comenzar desde el nodo 0
 
-import heapq
-from typing import Tuple, List
-def leer_grafo_ponderado(ruta_archivo : str)->List[List[int]]:
-    """Lee una matriz de adyacencia desde un archivo y la convierte en una lista de listas."""
-    with open(ruta_archivo, 'r') as archivo:
-        matriz: List[List[int]] = []
-        for linea in archivo:
-            fila: List[int] = [int(valor) if valor != '-1' else float('inf') for valor in linea.strip().split()]
-            matriz.append(fila)
+    mst = []  # Almacena las aristas del MST
+
+    for _ in range(num_nodos):
+        nodo_actual = -1
+        for nodo in range(num_nodos):
+            if not visitado[nodo] and (nodo_actual == -1 or aristas_minimas[nodo]['peso'] < aristas_minimas[nodo_actual]['peso']):
+                nodo_actual = nodo
+
+        if aristas_minimas[nodo_actual]['peso'] == INFINITO:
+            raise ValueError("¡No es posible construir un MST! El grafo no es conexo.")
+
+        visitado[nodo_actual] = True
+        peso_total += aristas_minimas[nodo_actual]['peso']
+
+        if aristas_minimas[nodo_actual]['origen'] != -1:
+            mst.append((aristas_minimas[nodo_actual]['origen'], nodo_actual))
+
+        for nodo_destino in range(num_nodos):
+            if matriz_adyacencia[nodo_actual][nodo_destino] != -1 and matriz_adyacencia[nodo_actual][nodo_destino] < aristas_minimas[nodo_destino]['peso']:
+                aristas_minimas[nodo_destino] = {'peso': matriz_adyacencia[nodo_actual][nodo_destino], 'origen': nodo_actual}
+
+    return mst, peso_total
+
+
+# Matriz de adyacencia proporcionada directamente en el código
+grafo = [
+    [0, 2, -1, 6, -1],
+    [2, 0, 3, 8, 5],
+    [-1, 3, 0, -1, 7],
+    [6, 8, -1, 0, 9],
+    [-1, 5, 7, 9, 0]
+]
+
+# Código principal
+if __name__ == "__main__":
+    try:
+        arbol_expansion_minima, peso_total = prim(grafo)
         
-    return matriz
-
-def prim_mst(matriz):
-    """Implementa el algoritmo de Prim para encontrar el MST en un grafo ponderado."""
-    num_nodos:int = len(matriz)
-    visitados: List[int] = [False] * num_nodos  # Para rastrear nodos visitados
-    mst_edges:List[Tuple[int,int,int]] = []  # Lista para almacenar las aristas del MST
-    min_heap = [(0, 0, -1)]  # (peso, nodo actual, nodo previo)
-    total_peso:int = 0  # Peso total del MST
-
-    while min_heap:
-        peso, nodo, previo = heapq.heappop(min_heap)
-
-        if visitados[nodo]:
-            continue
-
-        visitados[nodo] = True
-        total_peso += peso
-
-        # Si no es el nodo inicial, agregamos la arista al MST
-        if previo != -1:
-            mst_edges.append((previo, nodo, peso))
-
-        # Agregamos las aristas adyacentes al heap
-        for vecino in range(num_nodos):
-            if not visitados[vecino] and matriz[nodo][vecino] != float('inf'):
-                heapq.heappush(min_heap, (matriz[nodo][vecino], vecino, nodo))
-    #print(mst_edges)
-        
-
-    return mst_edges, total_peso
-
-# Leer la matriz de adyacencia
-ruta_archivo: str = 'grafo.txt'
-matriz_adyacencia: List[List[int]] = leer_grafo_ponderado(ruta_archivo)
-
-# Encontrar el MST (Minimum Spanning Tree)
-mst_edges, total_peso = prim_mst(matriz_adyacencia)
-
-
-print("Conexiones óptimas para el cableado entre colonias:")
-for u, v, peso in mst_edges:
-    print(f"Colonia {u+1} - Colonia {v+1} : {peso} km")
-
-print(f"Longitud total mínima de cableado: {total_peso} km")
-
+        # Imprimir las aristas en el formato deseado
+        print("Aristas del MST (forma óptima de cablear):")
+        print(", ".join(f"({origen}, {destino})" for origen, destino in arbol_expansion_minima))
+    except Exception as error:
+        print(f"Error: {error}")
